@@ -2,6 +2,8 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 
 from .forms import FileUploadForm
+from .models import SavedFileModel
+
 
 @login_required
 def home(request):
@@ -11,6 +13,9 @@ def home(request):
         form = FileUploadForm(request.POST, request.FILES)
 
         if form.is_valid():
+            sfm = SavedFileModel(user=request.user, file=request.FILES['file'])
+            sfm.save()
+
             return redirect('home')
         else:
             message = 'Failed to upload file / form not valid.'

@@ -4,6 +4,14 @@
 
 <h1>Hello Internet!</h1>
 
+<h3>{{ message }}</h3>
+
+<form action="{% url 'home' %}", method="post", enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form }}
+     <input type="submit" value="Submit">
+</form>
+
 <ul>
     <li><a href="{% url 'logout' %}">logout</a></li>
 </ul>

@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand, CommandError
-from keeper.models2 import ProtectedFileModel, ProtectedUrlModel
+from keeper.models import ProtectedFileModel, ProtectedUrlModel
 
 
 class Command(BaseCommand):

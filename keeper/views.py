@@ -83,6 +83,7 @@ def home(request):
         'message': message,
         'saved_file_models': saved_file_models,
         'saved_url_models': saved_url_models,
+        'user': str(request.user)
     })
 
 def get_file(request, uuid):

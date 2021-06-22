@@ -4,6 +4,32 @@
         <title>keeper</title>
     </head>
 
+    <style>
+        /* https://www.w3schools.com/css/tryit.asp?filename=trycss_table_fancy */
+        .custom_table {
+          font-family: Arial, Helvetica, sans-serif;
+          border-collapse: collapse;
+          width: 100%;
+        }
+
+        .custom_table td, #custom_table th {
+          border: 1px solid #ddd;
+          padding: 8px;
+        }
+
+        .custom_table tr:nth-child(even){background-color: #f2f2f2;}
+
+        .custom_table tr:hover {background-color: #ddd;}
+
+        .custom_table th {
+          padding-top: 12px;
+          padding-bottom: 12px;
+          text-align: left;
+          background-color: #04AA6D;
+          color: white;
+        }
+    </style>
+
     <body>
     {% block content %}{% endblock content %}
     </body>

@@ -4,6 +4,7 @@ from django.contrib.auth import hashers
 from django.utils import timezone
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.urls import reverse
 
 import datetime
 import uuid
@@ -33,7 +34,8 @@ class _ProtectedResourceBaseModel(models.Model):
             # It's done here mainly because of admin
             # panel which treats password field as a
             # regular CharField.
-            self.password = hashers.make_password(str(self.password))
+            #self.password = hashers.make_password(str(self.password))
+            pass
         super().save(force_insert, force_update, *args, **kwargs)
         self._cached_password = self.password
 
@@ -51,10 +53,19 @@ class SavedFileModel(_ProtectedResourceBaseModel):
 
     file = models.FileField(upload_to=_tmpname)
 
+    def get_original_filename(self):
+        return self.file.name.lstrip(str(self.pk) + '__')
+
+    def get_url(self):
+        return reverse('get_file', kwargs={'uuid': str(self.uuid)})
+
 class SavedUrlModel(_ProtectedResourceBaseModel):
     """ Plain model used for file saved in storage. """
 
     url = models.URLField(max_length=2048)
+
+    def get_url(self):
+        return reverse('get_url', kwargs={'uuid': str(self.uuid)})
 
 class UserExtModel(models.Model):
     """ Extended information about user. """

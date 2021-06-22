@@ -18,3 +18,8 @@ class UrlShorteningForm(forms.ModelForm):
     class Meta:
         model = SavedUrlModel
         fields = ['url']  # binds to requests.FILES['file']
+
+
+class PasswordForm(forms.Form):
+
+    password = forms.CharField(max_length=100)

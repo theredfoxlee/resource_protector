@@ -2,9 +2,11 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import BaseUserManager
+from django.urls import reverse
 
 from .forms import FileUploadForm
 from .forms import UrlShorteningForm
+from .forms import PasswordForm
 from .models import SavedFileModel
 from .models import SavedUrlModel
 from .models import UserExtModel
@@ -34,6 +36,9 @@ def home(request):
     file_upload_form = None
     url_shortening_form = None
 
+    url = ''
+    password = ''
+
     if request.method == 'POST':
         password = _gen_password(10)
 
@@ -47,7 +52,15 @@ def home(request):
                 saved_file_model.password = password
                 saved_file_model.save()
 
-                return redirect('home')
+                file_upload_form = FileUploadForm()
+                url_shortening_form = UrlShorteningForm()
+
+                url = reverse('get_file', kwargs={'uuid': str(saved_file_model.uuid)})
+
+                file_upload_form = FileUploadForm()
+                url_shortening_form = UrlShorteningForm()
+
+                #return redirect('home')
             else:
                 message = 'Failed to upload file / FileUploadSubmit not valid.'
         elif 'UrlShorteningForm' in request.POST:
@@ -59,7 +72,12 @@ def home(request):
                 saved_url_model.password = password
                 saved_url_model.save()
 
-                return redirect('home')
+                url = reverse('get_url', kwargs={'uuid': str(saved_url_model.uuid)})
+
+                file_upload_form = FileUploadForm()
+                url_shortening_form = UrlShorteningForm()
+
+                #return redirect('home')
             else:
                 message = 'Failed to upload file / UrlShorteningForm not valid.'
         else:
@@ -83,30 +101,72 @@ def home(request):
         'message': message,
         'saved_file_models': saved_file_models,
         'saved_url_models': saved_url_models,
-        'user': str(request.user)
+        'user': str(request.user),
+        'url': url,
+        'password': password,
     })
 
 def get_file(request, uuid):
-    try:
-        saved_file_model = SavedFileModel.objects.get(uuid=uuid)
+    message = 'Give me resource password, m8!'
 
-        if saved_file_model:
-            response = HttpResponse(
-                saved_file_model.file,
-                content_type='application/octet-stream'
-            )
-            response['Content-Disposition'] = f'attachment; filename={saved_file_model.file.name.lstrip(str(saved_file_model.uuid) + "__")}'
-            return response
-    except Exception as e:
-        print('exception', str(e))
-        return HttpResponse(f'I do not know you: {uuid}')
+    password_form = None
+
+    if request.method == 'POST':
+        password_form = PasswordForm(request.POST)
+
+        if password_form.is_valid():
+            try:
+                saved_file_model = SavedFileModel.objects.get(uuid=uuid)
+                if saved_file_model:
+                    if password_form.cleaned_data['password'] == saved_file_model.password:
+                        response = HttpResponse(
+                            saved_file_model.file,
+                            content_type='application/octet-stream'
+                        )
+                        response['Content-Disposition'] = f'attachment; filename={saved_file_model.get_original_filename()}'
+                        return response
+                    else:
+                        message = 'Wrong password, m8!'
+            except Exception as e:
+                message = f'Exception: {str(e)}'
+        else:
+            message = 'Invalid form'
+
+    if password_form is None:
+        password_form = PasswordForm()
+
+    return render(request, 'keeper/resource.html', {
+        'form': password_form,
+        'action': reverse('get_file', kwargs={'uuid': str(uuid)}),
+        'message': message
+    })
 
 def get_url(request, uuid):
-    try:
-        saved_url_model = SavedUrlModel.objects.get(uuid=uuid)
+    message = 'Give me resource password, m8!'
 
-        if saved_url_model:
-            return redirect(saved_url_model.url)
-    except Exception as e:
-        print('exception', str(e))
-        return HttpResponse(f'I do not know you: {uuid}')
+    password_form = None
+
+    if request.method == 'POST':
+        password_form = PasswordForm(request.POST)
+
+        if password_form.is_valid():
+            try:
+                saved_url_model = SavedUrlModel.objects.get(uuid=uuid)
+                if saved_url_model:
+                    if password_form.cleaned_data['password'] == saved_url_model.password:
+                        return redirect(saved_url_model.url)
+                    else:
+                        message = 'Wrong password, m8!'
+            except Exception as e:
+                message = f'Exception: {str(e)}'
+        else:
+            message = 'Invalid form'
+
+    if password_form is None:
+        password_form = PasswordForm()
+
+    return render(request, 'keeper/resource.html', {
+        'form': password_form,
+        'action': reverse('get_url', kwargs={'uuid': str(uuid)}),
+        'message': message
+    })

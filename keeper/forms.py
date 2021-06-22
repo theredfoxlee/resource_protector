@@ -2,14 +2,19 @@
 
 from django import forms
 
+from .models import SavedFileModel
+from .models import SavedUrlModel
 
-class FileUploadForm(forms.Form):
+class FileUploadForm(forms.ModelForm):
     """ Plain form used for file upload. """
 
-    file = forms.FileField()  # binds to requests.FILES['file']
+    class Meta:
+        model = SavedFileModel
+        fields = ['file']  # binds to requests.FILES['file']
 
-
-class UrlShorteningForm(forms.Form):
+class UrlShorteningForm(forms.ModelForm):
     """ Plain form used for url shortening. """
 
-    url = forms.URLField(max_length=2048)
+    class Meta:
+        model = SavedUrlModel
+        fields = ['url']  # binds to requests.FILES['file']

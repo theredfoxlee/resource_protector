@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from .forms import FileUploadForm
 from .forms import UrlShorteningForm
 from .models import SavedFileModel
-
+from .models import SavedUrlModel
 
 @login_required
 def home(request):
@@ -19,8 +19,9 @@ def home(request):
             file_upload_form = FileUploadForm(request.POST, request.FILES)
 
             if file_upload_form.is_valid():
-                sfm = SavedFileModel(user=request.user, file=request.FILES['file'])
-                sfm.save()
+                saved_file_model = file_upload_form.save(commit=False)
+                saved_file_model.user = request.user
+                saved_file_model.save()
 
                 return redirect('home')
             else:
@@ -29,7 +30,10 @@ def home(request):
             url_shortening_form = UrlShorteningForm(request.POST)
 
             if url_shortening_form.is_valid():
-                # TODO: save in db
+                saved_url_model = url_shortening_form.save(commit=False)
+                saved_url_model.user = request.user
+                saved_url_model.save()
+
                 return redirect('home')
             else:
                 message = 'Failed to upload file / UrlShorteningForm not valid.'

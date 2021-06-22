@@ -1,10 +1,21 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import BaseUserManager
 
 from .forms import FileUploadForm
 from .forms import UrlShorteningForm
 from .models import SavedFileModel
 from .models import SavedUrlModel
+
+import string
+import random
+
+def _gen_password(N):
+    # https://stackoverflow.com/a/2257449
+    return ''.join(
+        random.SystemRandom().choice(string.ascii_uppercase + string.digits)
+        for _ in range(N)
+    )
 
 @login_required
 def home(request):
@@ -14,13 +25,16 @@ def home(request):
     url_shortening_form = None
 
     if request.method == 'POST':
+        password = _gen_password(10)
 
         if 'FileUploadSubmit' in request.POST:
             file_upload_form = FileUploadForm(request.POST, request.FILES)
 
             if file_upload_form.is_valid():
+
                 saved_file_model = file_upload_form.save(commit=False)
                 saved_file_model.user = request.user
+                saved_file_model.password = password
                 saved_file_model.save()
 
                 return redirect('home')
@@ -32,6 +46,7 @@ def home(request):
             if url_shortening_form.is_valid():
                 saved_url_model = url_shortening_form.save(commit=False)
                 saved_url_model.user = request.user
+                saved_url_model.password = password
                 saved_url_model.save()
 
                 return redirect('home')

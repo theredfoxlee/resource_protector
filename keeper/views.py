@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import BaseUserManager
 
@@ -83,3 +84,28 @@ def home(request):
         'saved_file_models': saved_file_models,
         'saved_url_models': saved_url_models,
     })
+
+def get_file(request, uuid):
+    try:
+        saved_file_model = SavedFileModel.objects.get(uuid=uuid)
+
+        if saved_file_model:
+            response = HttpResponse(
+                saved_file_model.file,
+                content_type='application/octet-stream'
+            )
+            response['Content-Disposition'] = f'attachment; filename={saved_file_model.file.name.lstrip(str(saved_file_model.uuid) + "__")}'
+            return response
+    except Exception as e:
+        print('exception', str(e))
+        return HttpResponse(f'I do not know you: {uuid}')
+
+def get_url(request, uuid):
+    try:
+        saved_url_model = SavedUrlModel.objects.get(uuid=uuid)
+
+        if saved_url_model:
+            return redirect(saved_url_model.url)
+    except Exception as e:
+        print('exception', str(e))
+        return HttpResponse(f'I do not know you: {uuid}')

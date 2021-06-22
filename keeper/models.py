@@ -9,7 +9,7 @@ import datetime
 import uuid
 
 def _tmpname(instance, filename):
-    return f'{filename}-{str(uuid.uuid4())}'
+    return f'{instance.pk}__{filename}'
 
 class _ProtectedResourceBaseModel(models.Model):
     """ Base model for passowrd protected resources. """

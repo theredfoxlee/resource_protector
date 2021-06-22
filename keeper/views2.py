@@ -6,6 +6,7 @@ from django.views.generic.list import ListView
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 
+from django.core import exceptions
 from django.shortcuts import render
 from django.shortcuts import redirect
 from django.urls import reverse
@@ -17,13 +18,35 @@ from .forms2 import PasswordForm
 
 from .models2 import ProtectedFileModel
 from .models2 import ProtectedUrlModel
+from .models2 import UserExtModel2
 
 import abc
 import random
 import string
 
 
-class HomeView(LoginRequiredMixin, View):
+class UpdateUserExtMixin:
+    """ Update UserExtModel2 if possible. """
+
+    def setup(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            self.update_user_ext(request)
+        return super().setup(request, *args, **kwargs)
+
+    @staticmethod
+    def update_user_ext(request):
+        user_agent = request.META.get('HTTP_USER_AGENT')
+        if user_agent:
+            try:
+                user_ext_model = UserExtModel2.objects.get(user=request.user)
+            except UserExtModel2.DoesNotExist:
+                pass
+            else:
+                user_ext_model.user_agent = user_agent
+                user_ext_model.save()
+
+
+class HomeView(UpdateUserExtMixin, LoginRequiredMixin, View):
     """ Home view of ResourceProtector app where resources (file/url) can be protected. """
 
     template_name = 'resource_protector/home.html'
@@ -114,7 +137,7 @@ class HomeView(LoginRequiredMixin, View):
             context['protected_resource_name'] = ''
         return context
 
-class ProtectedFilesView(LoginRequiredMixin, ListView):
+class ProtectedFilesView(UpdateUserExtMixin, LoginRequiredMixin, ListView):
     """ Generic view for html table of protected files. """
 
     template_name = 'resource_protector/protected_resource_list.html'
@@ -141,7 +164,7 @@ class ProtectedFilesView(LoginRequiredMixin, ListView):
         context['username'] = self.request.user
         return context
 
-class ProtectedUrlsView(LoginRequiredMixin, ListView):
+class ProtectedUrlsView(UpdateUserExtMixin, LoginRequiredMixin, ListView):
     """ Generic view for html table of protected urls. """
 
     template_name = 'resource_protector/protected_resource_list.html'
@@ -168,7 +191,7 @@ class ProtectedUrlsView(LoginRequiredMixin, ListView):
         context['username'] = self.request.user
         return context
 
-class _ProtectedResourceDownloadMixin(abc.ABC):
+class ProtectedResourceDownloadMixin(abc.ABC):
     """ Mixin used as a general logic for protected resource download. """
 
     template_name = 'resource_protector/protected_resource_download.html'
@@ -213,7 +236,7 @@ class _ProtectedResourceDownloadMixin(abc.ABC):
     def access_protected_resource(self, resource):
         """ Return `resourece` via HttpResponse. """
 
-class ProtectedFileAccessView(_ProtectedResourceDownloadMixin, View):
+class ProtectedFileAccessView(ProtectedResourceDownloadMixin, View):
     """ View used to access protected file. """
 
     protected_resource_model = ProtectedFileModel
@@ -230,7 +253,7 @@ class ProtectedFileAccessView(_ProtectedResourceDownloadMixin, View):
         )
         return response
 
-class ProtectedUrlAccessView(_ProtectedResourceDownloadMixin, View):
+class ProtectedUrlAccessView(ProtectedResourceDownloadMixin, View):
     """ View used to access protected url. """
 
     protected_resource_model = ProtectedUrlModel

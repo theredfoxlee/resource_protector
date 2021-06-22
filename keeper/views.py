@@ -73,8 +73,13 @@ def home(request):
     if url_shortening_form is None:
         url_shortening_form = UrlShorteningForm()
 
+    saved_file_models = SavedFileModel.objects.filter(user=request.user)
+    saved_url_models = SavedUrlModel.objects.filter(user=request.user)
+
     return render(request, 'keeper/home.html', {
         'file_upload_form': file_upload_form,
         'url_shortening_form': url_shortening_form,
         'message': message,
+        'saved_file_models': saved_file_models,
+        'saved_url_models': saved_url_models,
     })

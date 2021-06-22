@@ -18,8 +18,30 @@
      <input type="submit" name="UrlShorteningForm" value="Submit">
 </form>
 
+<h5>>> <a href="{% url 'logout' %}">LOGOUT</a></h5>
+
+<h3>-- SAVED FILES</h3>
+
+{% if saved_file_models %}
 <ul>
-    <li><a href="{% url 'logout' %}">logout</a></li>
+{% for e in saved_file_models %}
+    <li><a href="{{ e.file.url }}">{{ e.file.name }}</a></li>
+{% endfor %}
 </ul>
+{% else %}
+<p>No files.</p>
+{% endif %}
+
+<h3>-- SAVED URLS</h3>
+
+{% if saved_url_models %}
+<ul>
+{% for e in saved_url_models %}
+    <li><a href="{{ e.url }}">{{ e.url }}</a></li>
+{% endfor %}
+</ul>
+{% else %}
+<p>No urls.</p>
+{% endif %}
 
 {% endblock %}

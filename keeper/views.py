@@ -6,6 +6,7 @@ from .forms import FileUploadForm
 from .forms import UrlShorteningForm
 from .models import SavedFileModel
 from .models import SavedUrlModel
+from .models import UserExtModel
 
 import string
 import random
@@ -19,6 +20,14 @@ def _gen_password(N):
 
 @login_required
 def home(request):
+    # TODO: Refactor
+    user_agent = request.META.get('HTTP_USER_AGENT')
+
+    if user_agent:
+        user_ext_model = UserExtModel.objects.get(user=request.user)
+        user_ext_model.last_user_agent = user_agent
+        user_ext_model.save()
+
     message = 'Upload some files or save URLs, m8!'
 
     file_upload_form = None

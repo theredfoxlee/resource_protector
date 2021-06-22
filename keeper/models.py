@@ -2,6 +2,8 @@ from django.db import models
 from django.conf import settings
 from django.contrib.auth import hashers
 from django.utils import timezone
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 import datetime
 import uuid
@@ -53,3 +55,16 @@ class SavedUrlModel(_ProtectedResourceBaseModel):
     """ Plain model used for file saved in storage. """
 
     url = models.URLField(max_length=2048)
+
+class UserExtModel(models.Model):
+    """ Extended information about user. """
+
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+
+    last_user_agent = models.CharField(max_length=1000, default=None, null=True)
+
+
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def create_user_ext_model(sender, instance, created, **kwargs):
+    if created:
+        UserExtModel.objects.create(user=instance)

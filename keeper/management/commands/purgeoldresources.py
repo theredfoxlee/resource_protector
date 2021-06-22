@@ -1,10 +1,10 @@
 from django.core.management.base import BaseCommand, CommandError
-from keeper.models import SavedFileModel, SavedUrlModel
+from keeper.models2 import ProtectedFileModel, ProtectedUrlModel
 
 
 class Command(BaseCommand):
 
-    RESOURCES_TO_PURGE = [SavedFileModel, SavedUrlModel]
+    RESOURCES_TO_PURGE = [ProtectedFileModel, ProtectedUrlModel]
 
     help = 'Removes old resources (like files or ulrs) from an app.'
 

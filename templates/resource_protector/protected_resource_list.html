@@ -1,0 +1,29 @@
+{% extends "logged_base.html" %}
+{% block content %}
+
+{% if enhanced_object_list %}
+<div class="custom_table">
+<table border=1 frame=void rules=rows>
+    <tr>
+{% for header in enhanced_object_list.0.keys %}
+        <th> {{ header }} </th>
+{% endfor %}
+    </tr>
+{% for enhanced_object in enhanced_object_list %}
+    <tr>
+{% for header, value in enhanced_object.items %}
+{% if 'url' in header %}
+        <td><a href="{{ value }}" target="_blank"> {{value}}</a></td>
+{% else %}
+        <td>{{ value }}</td>
+{% endif %}
+{% endfor %}
+    </tr>
+{% endfor %}
+</table>
+</div>
+{% else %}
+<p>No protected <b><span class="orange_red_text">{{ protected_resource_name }}s.</span></b></p>
+{% endif %}
+
+{% endblock %}

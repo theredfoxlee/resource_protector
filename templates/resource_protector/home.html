@@ -1,0 +1,36 @@
+{% extends "logged_base.html" %}
+{% block content %}
+
+{% if error_message %}
+<p>{{ error_message }}</p>
+{% endif %}
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ protected_file_form }}
+    <input type="submit" name='protected_file_submit' value="Protect">
+</form>
+
+<form method="post">
+    {% csrf_token %}
+    {{ protected_url_form }}
+    <input type="submit" name='protected_url_submit' value="Protect">
+</form>
+
+{% if protected_url %}
+<p>{{ protected_resource_name.capitalize }} <b>protected</b>!</p>
+<div class="custom_table">
+<table border=1 frame=void rules=rows>
+<tr>
+    <th>Protected URL</th>
+    <th>Password</th>
+</tr>
+<tr>
+    <td><a href="{{ protected_url }}" target="_blank">{{ protected_url }}</a></td>
+    <td>{{ protected_password }}</td>
+</tr>
+</table>
+</div>
+{% endif %}
+
+{% endblock %}

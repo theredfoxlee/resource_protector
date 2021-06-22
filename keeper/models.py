@@ -1,7 +1,9 @@
 from django.db import models
 from django.conf import settings
 from django.contrib.auth import hashers
+from django.utils import timezone
 
+import datetime
 import uuid
 
 def _tmpname(instance, filename):
@@ -9,6 +11,9 @@ def _tmpname(instance, filename):
 
 class _ProtectedResourceBaseModel(models.Model):
     """ Base model for passowrd protected resources. """
+
+    # Used for old resources purging via purge() method.
+    created = models.DateTimeField(auto_now_add=True)
 
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, default=None, null=True)
@@ -29,6 +34,12 @@ class _ProtectedResourceBaseModel(models.Model):
             self.password = hashers.make_password(str(self.password))
         super().save(force_insert, force_update, *args, **kwargs)
         self._cached_password = self.password
+
+    @classmethod
+    def purge(cls, seconds=24*60*60):
+        max_resource_age_s = datetime.timedelta(seconds=seconds)
+        edge_date = timezone.now() - max_resource_age_s
+        return cls.objects.filter(created__lt=edge_date).delete()[0]
 
     class Meta:
         abstract=True

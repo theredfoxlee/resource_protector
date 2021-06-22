@@ -156,7 +156,8 @@ class ProtectedFilesView(UpdateUserExtMixin, LoginRequiredMixin, ListView):
                 ),
                 'password': str(e.password),
                 'original_name': str(e.original_name),
-                'created': str(e.created)
+                'created': str(e.created),
+                'accesses': str(e.accesses)
             }
             for e in self.object_list
         ]
@@ -183,7 +184,8 @@ class ProtectedUrlsView(UpdateUserExtMixin, LoginRequiredMixin, ListView):
                 ),
                 'password': str(e.password),
                 'direct_url': str(e.url),
-                'created': str(e.created)
+                'created': str(e.created),
+                'accesses': str(e.accesses)
             }
             for e in self.object_list
         ]
@@ -191,10 +193,10 @@ class ProtectedUrlsView(UpdateUserExtMixin, LoginRequiredMixin, ListView):
         context['username'] = self.request.user
         return context
 
-class ProtectedResourceDownloadMixin(abc.ABC):
-    """ Mixin used as a general logic for protected resource download. """
+class ProtectedResourceAccessMixin(abc.ABC):
+    """ Mixin used as a general logic for protected resource access. """
 
-    template_name = 'resource_protector/protected_resource_download.html'
+    template_name = 'resource_protector/protected_resource_access.html'
 
     protected_resource_model = None  # Override!
 
@@ -215,6 +217,8 @@ class ProtectedResourceDownloadMixin(abc.ABC):
                 context['error_message'] = 'Resource does not exists.'
             else:
                 if protected_resource.password == password_form.cleaned_data['password']:
+                    protected_resource.accesses += 1
+                    protected_resource.save()
                     return self.access_protected_resource(resource=protected_resource)
                 else:
                     context['error_message'] = 'Invalid password.'
@@ -236,7 +240,7 @@ class ProtectedResourceDownloadMixin(abc.ABC):
     def access_protected_resource(self, resource):
         """ Return `resourece` via HttpResponse. """
 
-class ProtectedFileAccessView(ProtectedResourceDownloadMixin, View):
+class ProtectedFileAccessView(ProtectedResourceAccessMixin, View):
     """ View used to access protected file. """
 
     protected_resource_model = ProtectedFileModel
@@ -253,7 +257,7 @@ class ProtectedFileAccessView(ProtectedResourceDownloadMixin, View):
         )
         return response
 
-class ProtectedUrlAccessView(ProtectedResourceDownloadMixin, View):
+class ProtectedUrlAccessView(ProtectedResourceAccessMixin, View):
     """ View used to access protected url. """
 
     protected_resource_model = ProtectedUrlModel

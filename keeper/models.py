@@ -27,6 +27,7 @@ class ProtectedResourceModel(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
     created = models.DateTimeField(auto_now_add=True)
+    accesses = models.IntegerField(default=0)
 
     @classmethod
     def purge(cls, seconds=None):

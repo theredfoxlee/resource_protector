@@ -23,11 +23,24 @@
 <h3>-- SAVED FILES</h3>
 
 {% if saved_file_models %}
-<ul>
+<div class="custom_table">
+<table border=1 frame=void rules=rows>
+  <tr>
+    <th>Protected URL</th>
+    <th>Password</th>
+    <th>Filename</th>
+    <th>Date</th>
+  </tr>
 {% for e in saved_file_models %}
-    <li><a href="{% url 'get_file' e.uuid %}">{{e.file.name}}</a></li>
+  <tr>
+    <td><a href="{{ e.get_url }}">{{ e.get_url }}</a></td>
+    <td>{{ e.password }}</td>
+    <td>{{ e.get_original_filename }}</td>
+    <td>{{ e.created }}</td>
+  </tr>
 {% endfor %}
-</ul>
+</table>
+</div>
 {% else %}
 <p>No files.</p>
 {% endif %}
@@ -35,11 +48,24 @@
 <h3>-- SAVED URLS</h3>
 
 {% if saved_url_models %}
-<ul>
+<div class="custom_table">
+<table border=1 frame=void rules=rows>
+  <tr>
+    <th>Protected URL</th>
+    <th>Password</th>
+    <th>Direct URL</th>
+    <th>Date</th>
+  </tr>
 {% for e in saved_url_models %}
-    <li><a href="{% url 'get_url' e.uuid %}">{{ e.url }}</a></li>
+  <tr>
+    <td><a href="{{ e.get_url }}">{{ e.get_url }}</a></td>
+    <td>{{ e.password }}</td>
+    <td>{{ e.url }}</td>
+    <td>{{ e.created }}</td>
+  </tr>
 {% endfor %}
-</ul>
+</table>
+</div>
 {% else %}
 <p>No urls.</p>
 {% endif %}

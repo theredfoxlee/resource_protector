@@ -1,20 +1,26 @@
-""" This module contains django-forms for keeper app. """
+""" This module contains forms for ResourceProtector app. """
+
 
 from django import forms
 
-from .models import SavedFileModel
-from .models import SavedUrlModel
+from .models import ProtectedFileModel
+from .models import ProtectedUrlModel
 
-class FileUploadForm(forms.ModelForm):
-    """ Plain form used for file upload. """
 
+class ProtectedFileForm(forms.ModelForm):
+    """ Form used for file upload (+ for model binding). """
     class Meta:
-        model = SavedFileModel
-        fields = ['file']  # binds to requests.FILES['file']
+        model = ProtectedFileModel
+        fields = ['file']
 
-class UrlShorteningForm(forms.ModelForm):
-    """ Plain form used for url shortening. """
 
+class ProtectedUrlForm(forms.ModelForm):
+    """ Form used for url retrival (+ for model binding). """
     class Meta:
-        model = SavedUrlModel
-        fields = ['url']  # binds to requests.FILES['file']
+        model = ProtectedUrlModel
+        fields = ['url']
+
+
+class PasswordForm(forms.Form):
+    """ Form used for password retrival. """
+    password = forms.CharField(max_length=100)

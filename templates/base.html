@@ -4,7 +4,92 @@
         <title>keeper</title>
     </head>
 
+    <style>
+        html, body {
+            height: 100%;
+        }
+
+        html {
+            display: table;
+            margin: auto;
+        }
+
+        body {
+            display: table-cell;
+            vertical-align: middle;
+
+            color: white;
+            background-color: #0a0908;
+        }
+
+        .orange_red_text {
+            color:  #f45000;
+        }
+
+        a:link{
+            color: white;
+        }
+        a:visited{
+            color: white;
+        }
+        a:hover{
+            color: #f45000;
+        }
+        a:focus{
+            color: #f45000;
+        }
+        a:active{
+            color: #f45000;
+        }
+
+        /* https://www.w3schools.com/css/tryit.asp?filename=trycss_table_fancy */
+        .custom_table {
+            font-family: Arial, Helvetica, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        .custom_table td, .custom_table th {
+            border: 1px solid #ddd
+;           padding: 8px;
+            color: #0a0908;
+        }
+
+        .custom_table td a:link {
+            color: #0a0908;
+        }
+
+        .custom_table td a:visited {
+            color: #0a0908;
+        }
+
+        .custom_table td a:hover {
+            color: #f45000;
+        }
+
+        .custom_table td a:focus {
+            color: #f45000;
+        }
+
+        .custom_table td a:active {
+            color: #f45000;
+        }
+
+        .custom_table tr {background-color: #f2f2f2;}
+
+        .custom_table tr:hover {background-color: #ddd;}
+
+        .custom_table th {
+              padding-top: 12px;
+              padding-bottom: 12px;
+              text-align: left;
+              background-color: #f45000;
+              color: white;
+        }
+    </style>
+
     <body>
-    {% block content %}{% endblock content %}
+        <h1><span class="orange_red_text">Resource Protector</span> | theredfoxlee</h1>
+        {% block base_content %}{% endblock base_content %}
     </body>
 </html>

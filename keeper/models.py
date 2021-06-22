@@ -1,70 +1,76 @@
+""" This module contains models for ResourceProtector app. """
+
+
 from django.db import models
+
 from django.conf import settings
-from django.contrib.auth import hashers
-from django.utils import timezone
-from django.db.models.signals import post_save
+
 from django.dispatch import receiver
+from django.utils import timezone
 
 import datetime
 import uuid
 
-def _tmpname(instance, filename):
-    return f'{instance.pk}__{filename}'
 
-class _ProtectedResourceBaseModel(models.Model):
-    """ Base model for passowrd protected resources. """
+# -- Protected resource models
 
-    # Used for old resources purging via purge() method.
-    created = models.DateTimeField(auto_now_add=True)
 
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, default=None, null=True)
-
-    password = models.CharField(max_length=100, default=None, null=True)  # HASH
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._cached_password = self.password
-
-    def save(self, force_insert=False, force_update=False, *args, **kwargs):
-        if self.password != self._cached_password:
-            # Password changed / newly set -> hash it.
-            # ---
-            # It's done here mainly because of admin
-            # panel which treats password field as a
-            # regular CharField.
-            self.password = hashers.make_password(str(self.password))
-        super().save(force_insert, force_update, *args, **kwargs)
-        self._cached_password = self.password
-
-    @classmethod
-    def purge(cls, seconds=24*60*60):
-        max_resource_age_s = datetime.timedelta(seconds=seconds)
-        edge_date = timezone.now() - max_resource_age_s
-        return cls.objects.filter(created__lt=edge_date).delete()[0]
+class ProtectedResourceModel(models.Model):
+    """ Model used as base class for protected resources. """
 
     class Meta:
-        abstract=True
+        abstract = True
 
-class SavedFileModel(_ProtectedResourceBaseModel):
-    """ Plain model used for file saved in storage. """
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    password = models.CharField(max_length=150, default=None, null=True)
 
-    file = models.FileField(upload_to=_tmpname)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
-class SavedUrlModel(_ProtectedResourceBaseModel):
-    """ Plain model used for file saved in storage. """
+    created = models.DateTimeField(auto_now_add=True)
+
+    @classmethod
+    def purge(cls, seconds=None):
+        """ Utility method for removing proteced resources older than `seconds`.
+            ---
+            Return: number of deleted protected resources.
+        """
+        if seconds is None:
+            seconds = 24 * 60 * 60  # 1 day
+        edge_date = timezone.now() - datetime.timedelta(seconds=seconds)
+        return cls.objects.filter(created__lt=edge_date).delete()[0]
+
+def _upload_to(instance, filename):
+    """ Return `uuid` as new filename for the resource. """
+    return str(instance.pk)
+
+class ProtectedFileModel(ProtectedResourceModel):
+    """ Model used to represent protected file resource. """
+
+    file = models.FileField(upload_to=_upload_to)
+    original_name = models.CharField(max_length=300)
+
+class ProtectedUrlModel(ProtectedResourceModel):
+    """ Model used to represent protected file resource. """
 
     url = models.URLField(max_length=2048)
 
+
+# -- Utility models
+
+
 class UserExtModel(models.Model):
-    """ Extended information about user. """
+    """ Model used to store additional information about `settings.AUTH_USER_MODEL`. """
 
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
-    last_user_agent = models.CharField(max_length=1000, default=None, null=True)
+    user_agent = models.CharField(max_length=1000, default=None, null=True)
 
 
-@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+# -- Models related signals
+
+
+@receiver(models.signals.post_save, sender=settings.AUTH_USER_MODEL)
 def create_user_ext_model(sender, instance, created, **kwargs):
+    """ Create UserExtModel instance on `settings.AUTH_USER_MODEL` creation. """
     if created:
         UserExtModel.objects.create(user=instance)

@@ -1,112 +1,283 @@
-from django.shortcuts import render, redirect
-from django.http import HttpResponse
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import BaseUserManager
+""" This module contains views for ResourceProtector app. """
 
-from .forms import FileUploadForm
-from .forms import UrlShorteningForm
-from .models import SavedFileModel
-from .models import SavedUrlModel
+
+from django.views.generic.base import View
+from django.views.generic.list import ListView
+
+from django.contrib.auth.mixins import LoginRequiredMixin
+
+from django.core import exceptions
+from django.shortcuts import render
+from django.shortcuts import redirect
+from django.urls import reverse
+from django.http import HttpResponse
+
+from .forms import ProtectedFileForm
+from .forms import ProtectedUrlForm
+from .forms import PasswordForm
+
+from .models import ProtectedFileModel
+from .models import ProtectedUrlModel
 from .models import UserExtModel
 
-import string
+import abc
 import random
+import string
 
-def _gen_password(N):
-    # https://stackoverflow.com/a/2257449
-    return ''.join(
-        random.SystemRandom().choice(string.ascii_uppercase + string.digits)
-        for _ in range(N)
-    )
 
-@login_required
-def home(request):
-    # TODO: Refactor
-    user_agent = request.META.get('HTTP_USER_AGENT')
+class UpdateUserExtMixin:
+    """ Update UserExtModel if possible. """
 
-    if user_agent:
-        user_ext_model = UserExtModel.objects.get(user=request.user)
-        user_ext_model.last_user_agent = user_agent
-        user_ext_model.save()
+    def setup(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            self.update_user_ext(request)
+        return super().setup(request, *args, **kwargs)
 
-    message = 'Upload some files or save URLs, m8!'
-
-    file_upload_form = None
-    url_shortening_form = None
-
-    if request.method == 'POST':
-        password = _gen_password(10)
-
-        if 'FileUploadSubmit' in request.POST:
-            file_upload_form = FileUploadForm(request.POST, request.FILES)
-
-            if file_upload_form.is_valid():
-
-                saved_file_model = file_upload_form.save(commit=False)
-                saved_file_model.user = request.user
-                saved_file_model.password = password
-                saved_file_model.save()
-
-                return redirect('home')
+    @staticmethod
+    def update_user_ext(request):
+        user_agent = request.META.get('HTTP_USER_AGENT')
+        if user_agent:
+            try:
+                user_ext_model = UserExtModel.objects.get(user=request.user)
+            except UserExtModel.DoesNotExist:
+                pass
             else:
-                message = 'Failed to upload file / FileUploadSubmit not valid.'
-        elif 'UrlShorteningForm' in request.POST:
-            url_shortening_form = UrlShorteningForm(request.POST)
+                user_ext_model.user_agent = user_agent
+                user_ext_model.save()
 
-            if url_shortening_form.is_valid():
-                saved_url_model = url_shortening_form.save(commit=False)
-                saved_url_model.user = request.user
-                saved_url_model.password = password
-                saved_url_model.save()
 
-                return redirect('home')
+class HomeView(UpdateUserExtMixin, LoginRequiredMixin, View):
+    """ Home view of ResourceProtector app where resources (file/url) can be protected. """
+
+    template_name = 'resource_protector/home.html'
+
+    def get(self, request, *args, **kwargs):
+        """ GET request handler. """
+        return render(request, self.template_name, self.get_context_data(request=request))
+
+    def post(self, request, *args, **kwargs):
+        """ POST request handler. """
+        context = {}
+
+        if 'protected_file_submit' in request.POST:
+            protected_file_form = ProtectedFileForm(request.POST, request.FILES)
+
+            if protected_file_form.is_valid():
+                # Retrieve model instance from ModelForm.
+                protected_file = protected_file_form.save(commit=False)
+                protected_file.user = request.user
+                protected_file.password = gen_password(length=15)
+                # Kepp the original file name for download.
+                protected_file.original_name = request.FILES['file'].name
+                # Upload file to S3 and save its "handle" in db.
+                protected_file.save()
+
+                protected_resource_name = 'file'
+
+                context['protected_url'] = get_protected_resource_url(
+                    resource_name=protected_resource_name,
+                    uuid=protected_file.uuid
+                )
+                context['protected_password'] = str(protected_file.password)
+                context['protected_resource_name'] = protected_resource_name
             else:
-                message = 'Failed to upload file / UrlShorteningForm not valid.'
+                # Leave populated form on site and print some errors.
+                context['protected_file_form'] = protected_file_form
+                context['error_message'] = 'ProtectedFileForm is not valid.'
+        elif 'protected_url_submit' in request.POST:
+            protected_url_form = ProtectedUrlForm(request.POST)
+
+            if protected_url_form.is_valid():
+                # Retrieve model instance from ModelForm.
+                protected_url = protected_url_form.save(commit=False)
+                protected_url.user = request.user
+                protected_url.password = gen_password(length=15)
+                protected_url.save()
+
+                protected_resource_name = 'url'
+
+                context['protected_url'] = get_protected_resource_url(
+                    resource_name=protected_resource_name,
+                    uuid=protected_url.uuid
+                )
+                context['protected_password'] = str(protected_url.password)
+                context['protected_resource_name'] = protected_resource_name
+            else:
+                # Leave populated form on site and print some errors.
+                context['protected_url_form'] = protected_url_form
+                context['error_message'] = 'ProtectedUrlForm is not valid.'
         else:
-            message = 'Unknown form!'
+            context['error_message'] = 'Invalid POST request.'
 
-            file_upload_form = FileUploadForm()
-            url_shortening_form = UrlShorteningForm()
+        return render(
+            request,
+            self.template_name,
+            self.get_context_data(request=request, **context)
+        )
 
-    if file_upload_form is None:
-        file_upload_form = FileUploadForm()
+    @staticmethod
+    def get_context_data(request=None, **kwargs):
+        """ Returns context with defaults. """
+        context = kwargs.copy()
+        # Empty strings are not used in home-template.
+        if 'error_message' not in context:
+            context['error_message'] = ''
+        if'username' not in context:
+            if request is not None:
+                context['username'] = str(request.user)
+            else:
+                context['username'] = ''
+        if 'protected_file_form' not in context:
+            context['protected_file_form'] = ProtectedFileForm()
+        if 'protected_url_form' not in context:
+            context['protected_url_form'] = ProtectedUrlForm()
+        if 'protected_url' not in context:
+            context['protected_url'] = ''
+            context['protected_password'] = ''
+            context['protected_resource_name'] = ''
+        return context
 
-    if url_shortening_form is None:
-        url_shortening_form = UrlShorteningForm()
+class ProtectedFilesView(UpdateUserExtMixin, LoginRequiredMixin, ListView):
+    """ Generic view for html table of protected files. """
 
-    saved_file_models = SavedFileModel.objects.filter(user=request.user)
-    saved_url_models = SavedUrlModel.objects.filter(user=request.user)
+    template_name = 'resource_protector/protected_resource_list.html'
 
-    return render(request, 'keeper/home.html', {
-        'file_upload_form': file_upload_form,
-        'url_shortening_form': url_shortening_form,
-        'message': message,
-        'saved_file_models': saved_file_models,
-        'saved_url_models': saved_url_models,
-        'user': str(request.user)
-    })
+    model = ProtectedFileModel
 
-def get_file(request, uuid):
-    try:
-        saved_file_model = SavedFileModel.objects.get(uuid=uuid)
+    def get_context_data(self, **kwargs):
+        """ Add enhanced_object_list to context (it's used to generate html table). """
+        context = super().get_context_data(**kwargs)
+        protected_resource_name = 'file'
+        context['enhanced_object_list'] = [
+            {
+                'protected_url': get_protected_resource_url(
+                    resource_name=protected_resource_name,
+                    uuid=str(e.uuid)
+                ),
+                'password': str(e.password),
+                'original_name': str(e.original_name),
+                'created': str(e.created)
+            }
+            for e in self.object_list
+        ]
+        context['protected_resource_name'] = protected_resource_name
+        context['username'] = self.request.user
+        return context
 
-        if saved_file_model:
-            response = HttpResponse(
-                saved_file_model.file,
-                content_type='application/octet-stream'
-            )
-            response['Content-Disposition'] = f'attachment; filename={saved_file_model.file.name.lstrip(str(saved_file_model.uuid) + "__")}'
-            return response
-    except Exception as e:
-        print('exception', str(e))
-        return HttpResponse(f'I do not know you: {uuid}')
+class ProtectedUrlsView(UpdateUserExtMixin, LoginRequiredMixin, ListView):
+    """ Generic view for html table of protected urls. """
 
-def get_url(request, uuid):
-    try:
-        saved_url_model = SavedUrlModel.objects.get(uuid=uuid)
+    template_name = 'resource_protector/protected_resource_list.html'
 
-        if saved_url_model:
-            return redirect(saved_url_model.url)
-    except Exception as e:
-        print('exception', str(e))
-        return HttpResponse(f'I do not know you: {uuid}')
+    model = ProtectedUrlModel
+
+    def get_context_data(self, **kwargs):
+        """ Add enhanced_object_list to context (it's used to generate html table). """
+        context = super().get_context_data(**kwargs)
+        protected_resource_name = 'url'
+        context['enhanced_object_list'] = [
+            {
+                'protected_url': get_protected_resource_url(
+                    resource_name=protected_resource_name,
+                    uuid=str(e.uuid)
+                ),
+                'password': str(e.password),
+                'direct_url': str(e.url),
+                'created': str(e.created)
+            }
+            for e in self.object_list
+        ]
+        context['protected_resource_name'] = protected_resource_name
+        context['username'] = self.request.user
+        return context
+
+class ProtectedResourceDownloadMixin(abc.ABC):
+    """ Mixin used as a general logic for protected resource download. """
+
+    template_name = 'resource_protector/protected_resource_download.html'
+
+    protected_resource_model = None  # Override!
+
+    def get(self, request, uuid, *args, **kwargs):
+        """ GET request handler. """
+        return render(request, self.template_name, self.get_context_data(request=request))
+
+    def post(self, request, uuid, *args, **kwargs):
+        """ POST request handler. """
+        password_form = PasswordForm(request.POST)
+
+        context = {}
+
+        if password_form.is_valid():
+            try:
+                protected_resource = self.protected_resource_model.objects.get(uuid=uuid)
+            except self.protected_resource_model.DoesNotExist:
+                context['error_message'] = 'Resource does not exists.'
+            else:
+                if protected_resource.password == password_form.cleaned_data['password']:
+                    return self.access_protected_resource(resource=protected_resource)
+                else:
+                    context['error_message'] = 'Invalid password.'
+        else:
+            context['error_message'] = 'PasswordForm is not valid.'
+
+        return render(request, self.template_name, self.get_context_data(request=request, **context))
+
+    @staticmethod
+    def get_context_data(request=None, **kwargs):
+        context = kwargs.copy()
+        if 'password_form' not in kwargs:
+            context['password_form'] = PasswordForm()
+        if 'error_message' not in kwargs:
+            context['error_message'] = ''
+        return context
+
+    @abc.abstractmethod
+    def access_protected_resource(self, resource):
+        """ Return `resourece` via HttpResponse. """
+
+class ProtectedFileAccessView(ProtectedResourceDownloadMixin, View):
+    """ View used to access protected file. """
+
+    protected_resource_model = ProtectedFileModel
+
+    def access_protected_resource(self, resource):
+        response = HttpResponse(
+            resource.file,
+            # TODO: add content_type guessing
+            content_type='application/octet-stream'
+        )
+        response['Content-Disposition'] = (
+            'attachment; filename='
+            + resource.original_name
+        )
+        return response
+
+class ProtectedUrlAccessView(ProtectedResourceDownloadMixin, View):
+    """ View used to access protected url. """
+
+    protected_resource_model = ProtectedUrlModel
+
+    def access_protected_resource(self, resource):
+        return redirect(resource.url)
+
+
+# -- View-utilities
+
+
+def get_protected_resource_url(resource_name, uuid):
+    """ Common way of creating urls for resources in ResourceProtector app. """
+    return reverse(f'get_{resource_name}', kwargs={'uuid': uuid})
+
+def gen_password(length):
+    """ Common way of creating password of a given length in ResourceProtector app. """
+    # Yup, it's taken from stackoverflow (https://stackoverflow.com/a/2257449).
+    return ''.join(
+        random.SystemRandom().choice(
+            'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+            'abcdefghijklmnopqrstuvwxyz'
+            '0123456789'
+            '+/!@#$%^&*()'
+        )
+        for _ in range(length)
+    )

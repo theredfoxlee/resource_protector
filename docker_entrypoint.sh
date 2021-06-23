@@ -73,6 +73,7 @@ fi
 
 python manage.py migrate
 python manage.py createsuperuser --noinput
+echo yes | python manage.py collectstatic
 
 echo -ne "[default]\naccess_key = ${AWS_SECRET_ACCESS_KEY}\nsecret_key = ${AWS_SECRETKEY_ID}\nhost_base = "${AWS_S3_ENDPOINT_URL}"\nhost_bucket = "${AWS_S3_ENDPOINT_URL}"\nhuman_readable_sizes = True\nmultipart_chunk_size_mb = 512\n" > ./s3cfg
 

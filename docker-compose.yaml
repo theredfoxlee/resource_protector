@@ -2,7 +2,8 @@ version: "3.3"
 
 services:
   rp:
-    build: .
+#    build: .
+    image: theredfoxlee/resource_protector:1.0
     ports:
       - "80:8000"
     environment:
@@ -14,6 +15,7 @@ services:
       - POSTGRES_DB_NAME=rpdatabase
       - POSTGRES_DB_USER=admin
       - POSTGRES_DB_PASSWORD=admin
+      - ENTRYPOINT_DELAY_S=10
     networks:
       - rp
     depends_on:
@@ -32,8 +34,8 @@ services:
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=admin
       - POSTGRES_DB=rpdatabase
-
-
+    networks:
+      - rp
 
 networks:
   rp:

@@ -67,7 +67,15 @@ if [ -z "${AWS_S3_ENDPOINT_URL}" ]; then
     exit 1
 fi
 
+if [ -n "${ENTRYPOINT_DELAY_S}" ]; then
+    sleep "${ENTRYPOINT_DELAY_S}"
+fi
+
 python manage.py migrate
 python manage.py createsuperuser --noinput
+
+echo -ne "[default]\naccess_key = ${AWS_SECRET_ACCESS_KEY}\nsecret_key = ${AWS_SECRETKEY_ID}\nhost_base = "${AWS_S3_ENDPOINT_URL}"\nhost_bucket = "${AWS_S3_ENDPOINT_URL}"\nhuman_readable_sizes = True\nmultipart_chunk_size_mb = 512\n" > ./s3cfg
+
+s3cmd -c ./s3cfg --no-ssl mb "s3://${AWS_STORAGE_BUCKET_NAME}"
 
 exec "$@"

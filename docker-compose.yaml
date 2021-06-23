@@ -2,8 +2,8 @@ version: "3.3"
 
 services:
   rp:
-#    build: .
-    image: theredfoxlee/resource_protector:1.0
+    build: .
+#    image: theredfoxlee/resource_protector:1.0
     ports:
       - "80:8000"
     environment:

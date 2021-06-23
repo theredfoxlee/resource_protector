@@ -6,6 +6,10 @@ if [ -z "${DJANGO_CUSTOM_DEBUG}" ]; then
     export DJANGO_CUSTOM_DEBUG='0'
 fi
 
+if [ -z "${DJANGO_CUSTOM_ALLOWED_HOSTS}" ]; then
+    export DJANGO_CUSTOM_ALLOWED_HOSTS='*'
+fi
+
 if [ -z "${DJANGO_SUPERUSER_USERNAME}" ]; then
     export DJANGO_SUPERUSER_USERNAME='admin'
 fi

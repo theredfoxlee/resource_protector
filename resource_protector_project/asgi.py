@@ -1,5 +1,5 @@
 """
-ASGI config for keeper_project project.
+ASGI config for resource_protector_project project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 
@@ -11,6 +11,6 @@ import os
 
 from django.core.asgi import get_asgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'keeper_project.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'resource_protector_project.settings')
 
 application = get_asgi_application()

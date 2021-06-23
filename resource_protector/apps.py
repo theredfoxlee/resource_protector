@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class KeeperConfig(AppConfig):
+class ResourceProtectorConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'keeper'
+    name = 'resource_protector'

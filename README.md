@@ -1,14 +1,14 @@
-# keeper
+# resource_protector
 
 A blob storage.
 
 ## usage
 
-keeper is running on port **8000**.
+resource_protector is running on port **8000**.
 
 ```bash
-docker build . -t theredfoxlee/keeper:latest
-docker run --env-file custom_envs -p 80:8000 theredfoxlee/keeper:latest
+docker build . -t theredfoxlee/resource_protector:latest
+docker run --env-file custom_envs -p 80:8000 theredfoxlee/resource_protector:latest
 ```
 
 ### custom_envs

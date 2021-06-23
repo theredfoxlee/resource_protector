@@ -14,4 +14,4 @@ COPY . .
 EXPOSE 8000
 
 ENTRYPOINT ["./docker_entrypoint.sh"] 
-CMD ["gunicorn", "keeper_project.wsgi:application", "--bind", "0.0.0.0:8000"]
+CMD ["gunicorn", "resource_protector_project.wsgi:application", "--bind", "0.0.0.0:8000"]

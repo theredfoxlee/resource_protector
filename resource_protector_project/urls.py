@@ -1,4 +1,4 @@
-"""keeper_project URL Configuration
+"""resource_protector_project URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/3.2/topics/http/urls/
@@ -21,7 +21,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     # Main app.
-    path('', include('keeper.urls')),
+    path('', include('resource_protector.urls')),
 
     # Dangling routes (without specified app).
     path('login/', auth_views.LoginView.as_view(redirect_authenticated_user=True), name='login'),

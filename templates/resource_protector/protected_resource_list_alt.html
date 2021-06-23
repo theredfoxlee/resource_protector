@@ -1,0 +1,22 @@
+{% extends "logged_base.html" %}
+{% block content %}
+{% if enhanced_object_list_grouped_by_day %}
+    {% for date, enhanced_object_list in enhanced_object_list_grouped_by_day.items %}
+        <p>
+        {{ date }}, added:</br>
+        {% for enhanced_object in enhanced_object_list %}
+            {{ enhanced_object.name }}
+            {% if enhanced_object.accesses <= 0 %}
+                that has <span class="orange_red_text">not</span> been visited <span class="orange_red_text">even once</span>.
+                {% elif enhanced_object.accesses == 1 %}
+                that has been visited <span class="orange_red_text">1 time</span>.
+                {% else %}
+                that has been visited <span class="orange_red_text">{{ enhanced_object.accesses }} times</span>.
+            {% endif %}</br>
+        {%endfor%}
+        </p>
+    {% endfor %}
+{% else %}
+    <p>No protected <b><span class="orange_red_text">{{ protected_resource_name }}s.</span></b></p>
+{% endif %}
+{% endblock %}

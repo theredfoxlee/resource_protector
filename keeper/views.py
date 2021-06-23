@@ -23,6 +23,7 @@ from .models import UserExtModel
 import abc
 import random
 import string
+import types
 
 
 class UpdateUserExtMixin:
@@ -157,7 +158,7 @@ class ProtectedFilesView(UpdateUserExtMixin, LoginRequiredMixin, ListView):
                 'password': str(e.password),
                 'original_name': str(e.original_name),
                 'created': str(e.created),
-                'accesses': str(e.accesses)
+                'accesses': int(e.accesses)
             }
             for e in self.object_list
         ]
@@ -185,13 +186,61 @@ class ProtectedUrlsView(UpdateUserExtMixin, LoginRequiredMixin, ListView):
                 'password': str(e.password),
                 'direct_url': str(e.url),
                 'created': str(e.created),
-                'accesses': str(e.accesses)
+                'accesses': int(e.accesses)
             }
             for e in self.object_list
         ]
         context['protected_resource_name'] = protected_resource_name
         context['username'] = self.request.user
         return context
+
+class ProtectedFilesAltView(UpdateUserExtMixin, LoginRequiredMixin, ListView):
+
+    template_name = 'resource_protector/protected_resource_list_alt.html'
+
+    model = ProtectedFileModel
+
+    def get_context_data(self, **kwargs):
+        """ Add enhanced_object_list to context (it's used to generate html table). """
+        context = super().get_context_data(**kwargs)
+        protected_resource_name = 'file'
+        context['enhanced_object_list_grouped_by_day'] = {}
+        for e in self.object_list:
+            context['enhanced_object_list_grouped_by_day'].setdefault(
+                e.created.date(), []
+            ).append(
+                types.SimpleNamespace(
+                    name=str(e.original_name),
+                    accesses=int(e.accesses)
+                )
+            )
+        context['protected_resource_name'] = protected_resource_name
+        context['username'] = self.request.user
+        return context    
+
+class ProtectedUrlsAltView(UpdateUserExtMixin, LoginRequiredMixin, ListView):
+    
+    template_name = 'resource_protector/protected_resource_list_alt.html'
+
+    model = ProtectedUrlModel
+
+    def get_context_data(self, **kwargs):
+        """ Add enhanced_object_list to context (it's used to generate html table). """
+        context = super().get_context_data(**kwargs)
+        protected_resource_name = 'url'
+        context['enhanced_object_list_grouped_by_day'] = {}
+        for e in self.object_list:
+            context['enhanced_object_list_grouped_by_day'].setdefault(
+                e.created.date(), []
+            ).append(
+                types.SimpleNamespace(
+                    name=str(e.url),
+                    accesses=int(e.accesses)
+                )
+            )
+        context['protected_resource_name'] = protected_resource_name
+        context['username'] = self.request.user
+        return context    
 
 class ProtectedResourceAccessMixin(abc.ABC):
     """ Mixin used as a general logic for protected resource access. """

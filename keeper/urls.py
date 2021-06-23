@@ -9,4 +9,7 @@ urlpatterns = [
 
     path('protected_files/', views.ProtectedFilesView.as_view(), name='protected_files'),
     path('protected_urls/', views.ProtectedUrlsView.as_view(), name='protected_urls'),
+
+    path('protected_files/alt', views.ProtectedFilesAltView.as_view(), name='protected_files_alt'),
+    path('protected_urls/alt', views.ProtectedUrlsAltView.as_view(), name='protected_urls_alt'),
 ]

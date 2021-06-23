@@ -5,7 +5,7 @@ services:
     build: .
 #    image: theredfoxlee/resource_protector:1.0
     ports:
-      - "80:8000"
+      - "8000:8000"
     environment:
       - DJANGO_CUSTOM_DEBUG=1
       - AWS_STORAGE_BUCKET_NAME=rpstorage
@@ -29,6 +29,8 @@ services:
     command: server -s3 -volume.max=1
   db:
     image: postgres
+    ports:
+      - "5432:5432"
     restart: always
     environment:
       - POSTGRES_USER=admin
@@ -36,6 +38,24 @@ services:
       - POSTGRES_DB=rpdatabase
     networks:
       - rp
+  router:
+    image: nginx
+    volumes:
+     - ./utils/nginx-templates:/etc/nginx/templates
+     - ./routes:/routes
+    ports:
+     - "80:80"
+    environment:
+     - NGINX_HOST=grzaniec.bieda.it
+     - NGINX_PORT=80
+     - RP_HOST=rp
+     - RP_PORT=8000
+     - S3_HOST=s3
+     - S3_PORT=8333
+     - S3_BUCKET=rpstorage
+    restart: on-failure
+    networks:
+     - rp
 
 networks:
   rp:

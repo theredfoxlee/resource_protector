@@ -1,0 +1,13 @@
+resolver 127.0.0.11 ipv6=off;
+
+server {
+    listen ${NGINX_PORT} default_server;
+
+    location ~ /static/(.+) {
+        proxy_pass http://${S3_HOST}:${S3_PORT}/${S3_BUCKET}/$1;
+    }
+
+    location / {
+        proxy_pass http://${RP_HOST}:${RP_PORT}/;
+    }
+}

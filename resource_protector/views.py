@@ -145,6 +145,9 @@ class ProtectedFilesView(UpdateUserExtMixin, LoginRequiredMixin, ListView):
 
     model = ProtectedFileModel
 
+    def get_queryset(self):
+        return ProtectedFileModel.objects.filter(user=self.request.user)
+
     def get_context_data(self, **kwargs):
         """ Add enhanced_object_list to context (it's used to generate html table). """
         context = super().get_context_data(**kwargs)
@@ -173,6 +176,9 @@ class ProtectedUrlsView(UpdateUserExtMixin, LoginRequiredMixin, ListView):
 
     model = ProtectedUrlModel
 
+    def get_queryset(self):
+        return ProtectedUrlModel.objects.filter(user=self.request.user)
+
     def get_context_data(self, **kwargs):
         """ Add enhanced_object_list to context (it's used to generate html table). """
         context = super().get_context_data(**kwargs)
@@ -200,6 +206,9 @@ class ProtectedFilesAltView(UpdateUserExtMixin, LoginRequiredMixin, ListView):
 
     model = ProtectedFileModel
 
+    def get_queryset(self):
+        return ProtectedFileModel.objects.filter(user=self.request.user)
+
     def get_context_data(self, **kwargs):
         """ Add enhanced_object_list to context (it's used to generate html table). """
         context = super().get_context_data(**kwargs)
@@ -223,6 +232,9 @@ class ProtectedUrlsAltView(UpdateUserExtMixin, LoginRequiredMixin, ListView):
     template_name = 'resource_protector/protected_resource_list_alt.html'
 
     model = ProtectedUrlModel
+
+    def get_queryset(self):
+        return ProtectedUrlModel.objects.filter(user=self.request.user)
 
     def get_context_data(self, **kwargs):
         """ Add enhanced_object_list to context (it's used to generate html table). """
